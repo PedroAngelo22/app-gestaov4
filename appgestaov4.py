@@ -199,9 +199,15 @@ elif st.session_state.authenticated:
                 for file in matched:
                     st.write(f"📄 {os.path.relpath(file, BASE_DIR)}")
                     with open(file, "rb") as f:
-                        if file.endswith(".pdf"):
-                            file_url = f"/{file.replace(os.sep, '/')}"
-                            st.markdown(f"[🔍 Visualizar PDF]({file_url})", unsafe_allow_html=True)
+                        if file.endswith(".pdf") and "view" in user_permissions:
+    base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+    pdf_display = f'''
+        <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                width="700" height="1000" type="application/pdf">
+        </iframe>
+    '''
+    st.markdown(pdf_display, unsafe_allow_html=True)
+    f.seek(0)
                             if "download" in user_permissions:
                                 st.download_button("📥 Baixar PDF", f, file_name=os.path.basename(file), mime="application/pdf")
                         elif file.endswith(('.jpg', '.jpeg', '.png')):
