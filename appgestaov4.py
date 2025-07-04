@@ -42,13 +42,6 @@ def log_action(user, action, file):
               (datetime.now().isoformat(), user, action, file))
     conn.commit()
 
-def embed_pdf_base64(pdf_bytes):
-    b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-    return f"""
-        <iframe width="100%" height="600" src="data:application/pdf;base64,{b64}" 
-        frameborder="0" style="border:1px solid #ccc;"></iframe>
-    """
-
 # Estado da sessão
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -209,7 +202,10 @@ elif st.session_state.authenticated:
                     with open(file, "rb") as f:
                         if file.endswith(".pdf"):
                             pdf_bytes = f.read()
-                            st.markdown(embed_pdf_base64(pdf_bytes), unsafe_allow_html=True)
+                            b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                            href = f'<a href="data:application/pdf;base64,{b64}" target="_blank">🔍 Visualizar PDF em nova aba</a>'
+                            if st.button(f"🔍 Abrir PDF ({os.path.basename(file)})", key=file):
+                                st.markdown(href, unsafe_allow_html=True)
                             f.seek(0)
                             if "download" in user_permissions:
                                 st.download_button("📥 Baixar PDF", f, file_name=os.path.basename(file), mime="application/pdf")
