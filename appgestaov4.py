@@ -1,5 +1,6 @@
 import os
 import shutil
+import base64
 from datetime import datetime
 import streamlit as st
 import sqlite3
@@ -40,6 +41,13 @@ def log_action(user, action, file):
     c.execute("INSERT INTO logs (timestamp, user, action, file) VALUES (?, ?, ?, ?)",
               (datetime.now().isoformat(), user, action, file))
     conn.commit()
+
+def embed_pdf_base64(pdf_bytes):
+    b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+    return f"""
+        <iframe width="100%" height="600" src="data:application/pdf;base64,{b64}" 
+        frameborder="0" style="border:1px solid #ccc;"></iframe>
+    """
 
 # Estado da sessão
 if "authenticated" not in st.session_state:
@@ -199,15 +207,10 @@ elif st.session_state.authenticated:
                 for file in matched:
                     st.write(f"📄 {os.path.relpath(file, BASE_DIR)}")
                     with open(file, "rb") as f:
-                        if file.endswith(".pdf") and "view" in user_permissions:
-    base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-    pdf_display = f'''
-        <iframe src="data:application/pdf;base64,{base64_pdf}" 
-                width="700" height="1000" type="application/pdf">
-        </iframe>
-    '''
-    st.markdown(pdf_display, unsafe_allow_html=True)
-    f.seek(0)
+                        if file.endswith(".pdf"):
+                            pdf_bytes = f.read()
+                            st.markdown(embed_pdf_base64(pdf_bytes), unsafe_allow_html=True)
+                            f.seek(0)
                             if "download" in user_permissions:
                                 st.download_button("📥 Baixar PDF", f, file_name=os.path.basename(file), mime="application/pdf")
                         elif file.endswith(('.jpg', '.jpeg', '.png')):
